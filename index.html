@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Open+Sans:wght@400;700&display=swap');
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        #chatbox {
+            background-color: white;
+            width: 400px;
+            height: 500px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        #chatbox h2 {
+            margin: 0;
+            padding: 20px;
+            background-color: #007bff;
+            color: white;
+            text-align: center;
+            border-top-left-radius: 10px;
+            border-top-right-radius: 10px;
+        }
+        #chatlogs {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+            font-family: 'Roboto', sans-serif;
+        }
+        #chatlogs div {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #e0e0e0;
+        }
+        #chatlogs div.user {
+            background-color: #d1e7dd;
+            align-self: flex-start;
+        }
+        #chatlogs div.bot {
+            background-color: #f8d7da;
+            align-self: flex-end;
+        }
+        #chatlogs div.typing {
+            background-color: #f0f0f0;
+            font-style: italic;
+            align-self: flex-end;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 20px;
+            width: 30px;
+        }
+        #chatlogs div.typing span {
+            display: inline-block;
+            animation: bounce 1s infinite;
+        }
+        #chatlogs div.typing span:nth-child(2) {
+            animation-delay: 0.1s;
+        }
+        #chatlogs div.typing span:nth-child(3) {
+            animation-delay: 0.2s;
+        }
+        @keyframes bounce {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+        #userInput {
+            display: flex;
+            border-top: 1px solid #ccc;
+        }
+        #userInput input {
+            flex-grow: 1;
+            padding: 10px;
+            border: none;
+            border-top-left-radius: 10px;
+            border-bottom-left-radius: 10px;
+            font-family: 'Open Sans', sans-serif;
+            font-size: 16px;
+        }
+        #userInput button {
+            padding: 10px 20px;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+            border-top-right-radius: 10px;
+            border-bottom-right-radius: 10px;
+            font-family: 'Open Sans', sans-serif;
+            font-size: 16px;
+            transition: background-color 0.3s, box-shadow 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        #userInput button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 300%;
+            height: 300%;
+            background-color: rgba(255, 255, 255, 0.15);
+            transform: translate(-50%, -50%) scale(0);
+            border-radius: 50%;
+            transition: transform 0.5s;
+        }
+        #userInput button:hover::before {
+            transform: translate(-50%, -50%) scale(1);
+        }
+        #userInput button:hover {
+            background-color: #0056b3;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        #userInput button:focus {
+            outline: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="chatbox">
+        <h2>Sachi Chatbot</h2>
+        <div id="chatlogs"></div>
+        <div id="userInput">
+            <input type="text" id="message" placeholder="Type a message...">
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        function sendMessage() {
+            const message = document.getElementById("message").value;
+            if (message.trim() === "") return;
+            document.getElementById("message").value = "";
+            displayMessage("You: " + message, "user");
+            displayTypingIndicator();
+
+            setTimeout(() => {
+                fetch("/get_response", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ message: message })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    removeTypingIndicator();
+                    displayMessage("Chatbot: " + data.response, "bot");
+                });
+            }, 2000); // 2-second delay
+        }
+
+        function displayMessage(message, type) {
+            const chatlogs = document.getElementById("chatlogs");
+            const messageElement = document.createElement("div");
+            messageElement.textContent = message;
+            messageElement.className = type;
+            chatlogs.appendChild(messageElement);
+            chatlogs.scrollTop = chatlogs.scrollHeight;
+        }
+
+        function displayTypingIndicator() {
+            const chatlogs = document.getElementById("chatlogs");
+            const typingElement = document.createElement("div");
+            typingElement.className = "typing";
+            typingElement.id = "typingIndicator";
+            typingElement.innerHTML = "<span>.</span><span>.</span><span>.</span>";
+            chatlogs.appendChild(typingElement);
+            chatlogs.scrollTop = chatlogs.scrollHeight;
+        }
+
+        function removeTypingIndicator() {
+            const typingElement = document.getElementById("typingIndicator");
+            if (typingElement) {
+                typingElement.remove();
+            }
+        }
+    </script>
+</body>
+</html>
